@@ -1,0 +1,155 @@
+<!doctype html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>Sketch Pad</title>
+	<link rel="stylesheet" type="text/css" href="css/canvas_style.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+	<script type="text/javascript" src="js/sketch.js"></script>
+	<script type="text/javascript" src="js/shortstraw.js"></script>
+</head>
+<body>
+
+	<canvas id="SketchPad" width="1300" height="600"></canvas>
+ 	<span></span>
+	<button s type="button" id="clearCanvas">Clear</button>
+	<script type="text/javascript">
+	// UI Config
+	var canvas;
+	var ctx;
+	var clicking = false;
+         	 
+	// In memory data struct
+	var mousestrokes = [];
+	
+	$(document).ready(function(){
+	 	init();
+	});
+	
+	function init() {
+		
+		canvas = document.getElementById('SketchPad'); //[0]
+		ctx = canvas.getContext("2d");
+        ctx.lineWidth = 4;
+
+		$('#SketchPad').mousemove(function(e){
+			if (!clicking) return ;
+			var x = e.pageX - $(this).offset().left ;
+			var y = e.pageY - $(this).offset().top ;
+			dragClick(x,y);
+			$("span").text("X: " + x + " Y: " + y);
+		});
+		
+		$('#SketchPad').mousedown(function(e){
+			var x = e.pageX - $(this).offset().left;
+			var y = e.pageY - $(this).offset().top ;
+			 startClick(x,y);
+			 $("span").text("X: " + x + " Y: " + y);
+		}).mouseup(function(e) {
+			var x = e.pageX - $(this).offset().left;
+			var y = e.pageY - $(this).offset().top ;
+			endClick(x,y);
+			$("span").text("X: " + x + " Y: " + y);
+		});
+		
+         	 
+	}
+	
+	
+	var strokeXYs ; //= [];
+	var lastPt;// = [];
+	var minx, miny, maxx, maxy; 
+	
+	function startClick(x,y) {
+		clicking = true;
+		strokeXYs = [];
+		lastPt = {x:x,y:y};
+		strokeXYs.push(lastPt);
+		
+		ctx.strokeStyle = "black";
+		ctx.beginPath();
+		ctx.moveTo(x,y);
+		d = new Date();
+	}
+	
+	var d;
+	function dragClick(x,y) {
+		$("span").text("Click Ended");
+		if ((new Date().getTime()-d)<20) return;
+		d = new Date();
+		
+		var pt = {x:x,y:y};
+		if ((pt.x==lastPt.x) && (pt.y==lastPt.y)) return ;
+		
+		strokeXYs.push(pt);
+		lastPt = pt;
+		
+		ctx.lineTo(x,y);
+		ctx.stroke();
+		
+	}
+	
+	function endClick(x,y) {
+		$("span").text("Click Ended");
+		clicking = false;
+		ctx.lineTo(x,y);
+		//ctx.closePath();
+		ctx.stroke();
+		strokeXYs.push({x:x,y:y});
+		mousestrokes.push(strokeXYs);
+		analyze(strokeXYs);
+	}
+	
+	
+	function analyze(stroke) {
+
+		// Use short straw algorithm
+		var corners = shortStraw(stroke);
+		
+		// Lets draw shortStrawPoints in RED.
+		ctx.strokeStyle = "red";
+		ctx.beginPath();
+		ctx.moveTo(corners[0].x,corners[0].y);
+		for (var i in corners) {
+			ctx.lineTo(corners[i].x,corners[i].y);
+		}
+		ctx.stroke();
+		
+		//  Let's display the corner points
+		$('#d2').val(JSON.stringify(corners));
+	}
+	
+
+	function drawline(x1, y1, x2, y2) {
+		ctx.beginPath();
+		ctx.moveTo(x1,y1);
+		ctx.lineTo(x2,y2);
+		ctx.closePath();
+		ctx.stroke();
+	}
+         
+	//   $(function() {
+	//     $('#SketchPad').sketch();
+	//   });
+	  var allpoints = [];
+	//   $('#SketchPad').on("mousemove", function(e) {
+   	// 	 if (e.which == 1) {
+    //     	$("span").text("X: " + e.pageX + " Y: " + e.pageY);
+	// 		allpoints.push({x:e.pageX,y:e.pageY});
+    // 	}
+	//   });
+	  // bind event handler to clear button
+      document.getElementById('clearCanvas').addEventListener('click', function(){
+		  var canvas = document.getElementById('SketchPad');
+		  var context = canvas.getContext('2d');
+		  context.clearRect(0,0,canvas.width , canvas.height);
+		  mousestrokes = [];
+		  //$('#SketchPad').sketch('actions',[]);
+		});
+	</script>
+     
+	 
+	 
+	 
+</body>
+</html>
